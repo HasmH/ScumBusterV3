@@ -3,3 +3,4 @@ secrets
 keys_and_config
 __pycache__
 migrations
+server/.env
