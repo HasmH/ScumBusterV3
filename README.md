@@ -1,6 +1,4 @@
-# scumBusterV2 ~scumBuster~
-~Game community "Anti-Cheat" API created with Django, ReactJS, and PostgreSQL~
-
+# ScumBusterV3
 
 Community driven "Anti-Cheat" web application written with the **MERN Stack - MongoDB, ExpressJS, ReactJS, NodeJs**
 
@@ -32,7 +30,4 @@ if (incomingPlayer.trustFactor === "undefined" || incomingPlayer.numberOfReports
 }
 ```
 
-
-## Application Architecture 
-<img src="https://github.com/HasmH/scumBuster/blob/main/misc/APIarch.png?raw=true" width="750" heigh="750">
 
