@@ -1,14 +1,20 @@
 import express, { application } from 'express'
 import { getPlayerSteamIdFromVanityUrl, getPlayerSummaries } from './steam-api'
-import { SqlDb } from './db/db'
+import mongoose from 'mongoose'
+import { User } from './models'
+import { getConnectionString } from './env'
+import 'dotenv/config'
 const app = express()
-const db = new SqlDb('sqlite::memory:')
+mongoose.connect(getConnectionString(process.env.MONGO_USER ?? '', process.env.MONGO_PW ?? '')).then(() => {
+  console.log('Connecting to Db..')
+}).catch((err) => {
+  console.error('Error connecting to Db..', err)
+})
 
 //Steam API + wrangling it for Business Logic goes here + any db orm logic
 
 app.get('/', (req, res) => {
-    res.send(db.testConnection())
-    res.send(db.getAllUsers())
+  res.send('helo')
 })
 
 /**
@@ -67,7 +73,9 @@ app.get('/user/steamId/find/:userSuppliedUrl', async (req, res) => {
 })
 
 app.post('/user/create/:steamId', async (req, res) => {
-    
+    const newUserSteamId = req.params.steamId
+    const newUser = new User({steamid: newUserSteamId})
+    await newUser.save()
 })
 
 app.listen(4321, () => {
