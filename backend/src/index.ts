@@ -1,38 +1,12 @@
 import express, { application } from 'express'
 import { getPlayerSteamIdFromVanityUrl, getPlayerSummaries } from './steam-api'
-import { MongoClient, ServerApiVersion } from 'mongodb'
-import { getConnectionString } from './env'
-import 'dotenv/config'
+import { UserDB } from './db'
 const app = express()
-const user = encodeURIComponent(process.env.MONGO_USER ?? '')
-const pw = encodeURIComponent(process.env.MONGO_PW ?? '')
-const uri = getConnectionString(user, pw)
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
-});
-
-
-async function run() {
-  try {
-    // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
-  }
-}
+const db = new UserDB()
 //Steam API + wrangling it for Business Logic goes here + any db orm logic
 
 app.get('/', async (req, res) => {
-  await run()
-  res.send('helo')
+  res.send('hello')
 })
 
 /**
@@ -90,8 +64,9 @@ app.get('/user/steamId/find/:userSuppliedUrl', async (req, res) => {
       }
 })
 
-app.post('/user/create/:steamId', async (req, res) => {
+app.get('/user/create/:steamId', async (req, res) => {
     const newUserSteamId = req.params.steamId
+
 
 })
 
