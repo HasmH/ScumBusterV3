@@ -1,7 +1,7 @@
 import express, { application } from 'express'
 import { getPlayerSteamIdFromVanityUrl, getPlayerSummaries } from './steam-api'
 import { User } from './models'
-import { SteamUserListSchema, SteamUserListType } from './schemas'
+import { SteamUserSchema } from './schemas'
 
 const app = express()
 //Steam API + wrangling it for Business Logic goes here + any db orm logic
@@ -50,18 +50,25 @@ app.get('/user/steamId/find/:listofUserSuppliedUrls', async (req, res) => {
   res.send(results)
 })
 
-app.post('/user/create/:steamId', async (req, res) => {
+app.post('/user/downvote/:steamId', async (req, res) => {
     const newUserSteamId = req.params.steamId
-    const newUser = new User({steamid: newUserSteamId, downvotes: 0})
-    await newUser.save()
-    res.send(newUser)
+    const existingUser = await User.findOne({steamid: newUserSteamId})
+    if (existingUser) {
+      await User.updateOne({ steamid: newUserSteamId }, { $inc: { downvotes: 1 } });
+      const updatedUser = await User.findOne({ steamid: newUserSteamId });
+      res.send(SteamUserSchema.parse(updatedUser));
+  } else {
+      let playerData = await getPlayerSummaries(newUserSteamId)
+      if (typeof playerData === 'string') {
+        res.send(`No profile was found with steam id ${newUserSteamId}`)
+        return
+      }
+      const newUser = new User(playerData).set('downvotes', 1)
+      await newUser.save()
+      res.send(SteamUserSchema.parse(newUser))
+    }
 })
 
-app.get('/user/:steamId', async (req, res) => {
-    const userSteamId = req.params.steamId
-    const existingUser = await User.findOne({steamid: userSteamId})
-    res.send(existingUser)
-})
 
 app.listen(4321, () => {
     console.log('Running on 4321')

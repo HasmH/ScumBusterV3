@@ -12,6 +12,18 @@ const UserSchema = new Schema({
       required: true,
       unique: true,
     },
+    personaname: {
+      type: String,
+    },
+    profileurl: {
+      type: String,
+    },
+    avatar: {
+      type: String,
+    },
+    timecreated: {
+      type: Number,
+    },
     downvotes: {
       type: Number,
       required: true,

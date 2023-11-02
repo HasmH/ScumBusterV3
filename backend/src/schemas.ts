@@ -6,22 +6,14 @@ const SteamUserSchema = z.object({
     personaname: z.string(),
     profileurl: z.string(),
     avatar: z.string(),
-    timecreated: z.number()
+    timecreated: z.number(),
+    downvotes: z.number(),
 })
 
-const MongoUserSchema = z.object({
-    steamid: z.string(),
-    downvotes: z.number().default(0)
-})
 
-const SteamUserListSchema = z.array(SteamUserSchema)
-
-
-type SteamUserListType = z.infer<typeof SteamUserListSchema>
-type UserType = z.infer<typeof MongoUserSchema>
+type SteamUser = z.infer<typeof SteamUserSchema>
 
 export {
-    SteamUserListType, 
-    SteamUserListSchema,
-    UserType
+    SteamUser, 
+    SteamUserSchema
 }
