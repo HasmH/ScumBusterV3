@@ -1,35 +1,10 @@
 import express, { application } from 'express'
 import { getPlayerSteamIdFromVanityUrl, getPlayerSummaries } from './steam-api'
-import { UserDB } from './db'
+import { User } from './models'
+import { SteamUserListSchema, SteamUserListType } from './schemas'
+
 const app = express()
-const db = new UserDB()
 //Steam API + wrangling it for Business Logic goes here + any db orm logic
-
-app.get('/', async (req, res) => {
-  res.send('hello')
-})
-
-/**
- * @params - list of steamIds 
- * @returns - SteamUser Information given a steamId or comma seperated list of steamIds
- */
-
-app.get('/user/steamId/:steamIds', async (req, res) => {
-    const steamIds = req.params.steamIds
-    const playerData = await getPlayerSummaries(steamIds)
-    res.send(playerData)
-})
-
-/**
- * @params - vanity URL (whatever comes after /id/XXXX for custom URLs users set)
- * @returns - SteamUser Information given a Display Name 
- */
-app.get('/user/customUrlSteamId/:vanityUrl', async (req, res) => {
-    const vanityUrl = req.params.vanityUrl
-    const playerSteamId = await getPlayerSteamIdFromVanityUrl(vanityUrl)
-    res.send(playerSteamId)
-
-})
 
 /**
  * @params - userSuppliedUrl - the url the user will give to report a player either in custom URL format or default URL format i.e.
@@ -37,37 +12,55 @@ app.get('/user/customUrlSteamId/:vanityUrl', async (req, res) => {
  * If it is a default url it will look something like - https://steamcommunity.com/profiles/76561198795577738
  * @returns - SteamUser information 
  */
-app.get('/user/steamId/find/:userSuppliedUrl', async (req, res) => {
-    const userSuppliedUrl =  decodeURIComponent(req.params.userSuppliedUrl)
-    //TODO: Some logic here to accept comma seperated list of URLs and iterate through blah blah
+app.get('/user/steamId/find/:listofUserSuppliedUrls', async (req, res) => {
+    const listofUserSuppliedUrls =  decodeURIComponent(req.params.listofUserSuppliedUrls).split(',').filter((a) => a && a.trim())
+    //TODO: User Supplied URL should be regex'ed to be https://steamcommunity.com/id/* or https://steamcommmunity.com/profiles/* - remove from list if not
     //TODO: User Supplied url in frontend should send it URL encoded
-    try {
-        const urlObject = new URL(userSuppliedUrl);
-        if (urlObject.pathname.includes("profiles/")) {
-          const parts = urlObject.pathname.split("/");
-          const defaultSteamId = parts[2];
-          const playerData = await getPlayerSummaries(defaultSteamId)
-          res.send(playerData)
-        } else if (urlObject.pathname.includes("id/")) {
-          const parts = urlObject.pathname.split("/");
-          const customVanityUrl =  parts[2];
-          const playerSteamId = await getPlayerSteamIdFromVanityUrl(customVanityUrl)
-          if (!playerSteamId) {
-            throw new Error('No Steam Id Was Found with that custom vanity url')
+    const results = await Promise.all(
+      listofUserSuppliedUrls.map(async (userSuppliedUrl) => {
+          try {
+              const urlObject = new URL(userSuppliedUrl)
+              if (urlObject.pathname.includes("profiles/")) {
+                  const parts = urlObject.pathname.split("/")
+                  const defaultSteamId = parts[2]
+                  const playerData = await getPlayerSummaries(defaultSteamId)
+                  if (typeof playerData === 'string') {
+                    return `No profile was found with steam id ${defaultSteamId}`
+                  }
+                  return playerData
+              } else if (urlObject.pathname.includes("id/")) {
+                  const parts = urlObject.pathname.split("/")
+                  const customVanityUrl =  parts[2]
+                  const playerSteamId = await getPlayerSteamIdFromVanityUrl(customVanityUrl)
+                  if (typeof playerSteamId === 'string') {
+                    return `No profile was found with steam id ${customVanityUrl}`
+                  }
+                  const playerData = await getPlayerSummaries(playerSteamId.toString())
+                  if (typeof playerData === 'string') {
+                    return `No profile was found with steam id ${playerSteamId}`
+                  }
+                  return playerData 
+              }
+          } catch (error) {
+              console.error(error)
+              throw new Error('Invalid URL Supplied')
           }
-          const playerData = await getPlayerSummaries(playerSteamId.toString())
-          res.send(playerData)
-        }
-      } catch (error) {
-        console.error(error)
-        throw new Error('Invalid URL Supplied')
-      }
+      })
+  )
+  res.send(results)
 })
 
-app.get('/user/create/:steamId', async (req, res) => {
+app.post('/user/create/:steamId', async (req, res) => {
     const newUserSteamId = req.params.steamId
+    const newUser = new User({steamid: newUserSteamId, downvotes: 0})
+    await newUser.save()
+    res.send(newUser)
+})
 
-
+app.get('/user/:steamId', async (req, res) => {
+    const userSteamId = req.params.steamId
+    const existingUser = await User.findOne({steamid: userSteamId})
+    res.send(existingUser)
 })
 
 app.listen(4321, () => {
@@ -75,12 +68,9 @@ app.listen(4321, () => {
     console.log('Initialising DB...')
 })
 
-//If Vanity URL (custom url) steam.../id/customname #1
-//If default steam.../profiles/712312321312 #2
-//User will supply the URL looking like either 
-//User experience: 
-//Enter a URL You want to Report
-//Backend gets steamid, avatar etc --> construct a simple page out of it 
-//Save against backend the following schema:
-//This is MVP
-//{steamId: number, downvotes: number }
+// MVP:
+  // 1. User can enter steam profile URL (s) and it will return the steam user information (/user/steamId/find/:userSuppliedUrl)
+  // 2. Results page - frontend will display the steam user information and allow the user to report the player
+    // 2.1 - Check if the User Exists in the database, if so, display downvotes
+  // 3. On dowvote - the user will be added to the database and the downvote count will be incremented
+    // 3.1 - If the user already exists in the database, the downvote count will be incremented
