@@ -81,3 +81,9 @@ app.listen(4321, () => {
     // 2.1 - Check if the User Exists in the database, if so, display downvotes
   // 3. On dowvote - the user will be added to the database and the downvote count will be incremented
     // 3.1 - If the user already exists in the database, the downvote count will be incremented
+  
+
+//TODO:
+  // - Testing
+  // - Error Handling
+  // - Status Codes 

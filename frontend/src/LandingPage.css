@@ -1,0 +1,33 @@
+/* LandingPage.css */
+
+.landing-page {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #2c2f33;
+    color: #8d9db6;
+  }
+  
+  .logo {
+    font-size: 4em;
+    text-shadow: 2px 2px #565759;
+    animation: neon 1s ease-in-out infinite alternate;
+  }
+  
+  .search-bar {
+    margin-top: 2em;
+    padding: 0.5em;
+    font-size: 1.2em;
+    width: 50%;
+  }
+  
+  @keyframes neon {
+    from {
+      text-shadow: 0 0 10px #8d9db6, 0 0 20px #8d9db6, 0 0 30px #8d9db6, 0 0 40px #8d9db6;
+    }
+    to {
+      text-shadow: 0 0 20px #8d9db6, 0 0 30px #8d9db6, 0 0 40px #8d9db6, 0 0 50px #8d9db6, 0 0 60px #8d9db6;
+    }
+  }
