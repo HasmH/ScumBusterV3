@@ -16,7 +16,7 @@ app.get('/user/steamId/find/:listofUserSuppliedUrls', async (req, res) => {
     const listofUserSuppliedUrls =  decodeURIComponent(req.params.listofUserSuppliedUrls).split(',').filter((a) => a && a.trim())
     //TODO: User Supplied URL should be regex'ed to be https://steamcommunity.com/id/* or https://steamcommmunity.com/profiles/* - remove from list if not
     //TODO: User Supplied url in frontend should send it URL encoded
-    const results = await Promise.all(
+    const results = await Promise.all( 
       listofUserSuppliedUrls.map(async (userSuppliedUrl) => {
           try {
               const urlObject = new URL(userSuppliedUrl)
@@ -32,17 +32,12 @@ app.get('/user/steamId/find/:listofUserSuppliedUrls', async (req, res) => {
                   const parts = urlObject.pathname.split("/")
                   const customVanityUrl =  parts[2]
                   const playerSteamId = await getPlayerSteamIdFromVanityUrl(customVanityUrl)
-                  if (typeof playerSteamId === 'string') {
-                    return `No profile was found with steam id ${customVanityUrl}`
-                  }
                   const playerData = await getPlayerSummaries(playerSteamId.toString())
-                  if (typeof playerData === 'string') {
-                    return `No profile was found with steam id ${playerSteamId}`
-                  }
                   return playerData 
               }
           } catch (error) {
               console.error(error)
+              //TODO: Catch error types here
               throw new Error('Invalid URL Supplied')
           }
       })
@@ -59,10 +54,6 @@ app.post('/user/downvote/:steamId', async (req, res) => {
       res.send(SteamUserSchema.parse(updatedUser));
   } else {
       let playerData = await getPlayerSummaries(newUserSteamId)
-      if (typeof playerData === 'string') {
-        res.send(`No profile was found with steam id ${newUserSteamId}`)
-        return
-      }
       const newUser = new User(playerData).set('downvotes', 1)
       await newUser.save()
       res.send(SteamUserSchema.parse(newUser))

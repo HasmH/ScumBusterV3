@@ -10,7 +10,7 @@ const steamApiEndpoint = (interfaceName: string, method: string, version: string
     return endpoint
 }
 
-const getPlayerSummaries = async (steamId: string): Promise<SteamUser | string> => {
+const getPlayerSummaries = async (steamId: string): Promise<SteamUser> => {
     const endpoint = steamApiEndpoint('ISteamUser', 'GetPlayerSummaries', 'v0002') + `&steamids=${steamId}`
     try {
         //If Existing User, do not call Steam API
@@ -27,7 +27,7 @@ const getPlayerSummaries = async (steamId: string): Promise<SteamUser | string> 
         }
         let playerData = res.data.response.players[0]
         if (playerData.length === 0) {
-            return `No profile was found with steam id ${steamId}`
+            throw new Error('No player found in Steam API')
         }
         const newUser = new User({steamid: steamId, 
             personaname: playerData.personaname, 
@@ -40,11 +40,11 @@ const getPlayerSummaries = async (steamId: string): Promise<SteamUser | string> 
         return SteamUserSchema.parse(newUser)
     } catch (error) {
         console.error(error)
-        return `No profile was found with steam id ${steamId}`
+        throw new Error('Something went wrong in DB..')
     }
 }
 
-const getPlayerSteamIdFromVanityUrl = async (vanityUrl: string): Promise<number | string> => {
+const getPlayerSteamIdFromVanityUrl = async (vanityUrl: string): Promise<number> => {
     const endpoint = steamApiEndpoint('ISteamUser', 'ResolveVanityURL', 'v0001') + `&vanityurl=${vanityUrl}`
     try {
         const res = await axios.get(endpoint)
@@ -52,13 +52,13 @@ const getPlayerSteamIdFromVanityUrl = async (vanityUrl: string): Promise<number 
             throw new Error('Some error')
         }
         if (res.data.response.message === 'No match') {
-            return `No profile was found with vanity url ${vanityUrl}`
+            throw new Error('No match - Steam API')
         }
         const steamId: number = res.data.response.steamid
         return steamId
     } catch (error) {
         console.error(error)
-        return `No profile was found with vanity url ${vanityUrl}`
+        throw new Error(`No profile was found with vanity url ${vanityUrl}`)
     }
 }
 
